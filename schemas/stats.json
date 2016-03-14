@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "New Statistics",
+  "description": "A New Statistics Request for a Palyer's Playthrough One Stage",
+  "type": "object",
+  "properties": {
+    "level": {
+      "description": "Level number that the player cleared",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": true
+    },
+    "time": {
+      "description": "Time taken to clear a level",
+      "type": "number",
+      "minimum": 0.0,
+      "exclusiveMinimum": true
+    },
+    "enemies": {
+      "description": "Level number that the player cleared",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": false
+    },
+    "some_text": {
+      "description": "Some text I don't know",
+      "type": "string"
+    }
+  },
+  "required": ["level", "time", "enemies"]
+}
