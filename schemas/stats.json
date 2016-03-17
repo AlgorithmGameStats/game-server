@@ -11,21 +11,37 @@
       "exclusiveMinimum": true
     },
     "time": {
-      "description": "Time taken to clear a level",
+      "description": "Time taken (in seconds) to clear the level",
       "type": "number",
       "minimum": 0.0,
       "exclusiveMinimum": true
     },
     "enemies": {
-      "description": "Level number that the player cleared",
+      "description": "Number of enemies the player destroyed this level",
       "type": "integer",
       "minimum": 0,
       "exclusiveMinimum": false
     },
-    "some_text": {
-      "description": "Some text I don't know",
+    "collected_coins": {
+      "description": "Number of coins the player collected in the level",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": false
+    },
+    "max_coins": {
+      "description": "Maximum number of coins a player could collect this level",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": false
+    },
+    "user": {
+      "description": "Username or User id",
+      "type": "string"
+    },
+    "comments": {
+      "description": "Some comments you can ask the player to enter",
       "type": "string"
     }
   },
-  "required": ["level", "time", "enemies"]
+  "required": ["level", "time", "enemies", "collected_coins", "max_coins"]
 }

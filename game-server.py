@@ -10,7 +10,7 @@ HOST = '0.0.0.0'
 PORT = '5000'
 DEBUG = False
 DATABASE_HOST = '192.168.99.100'
-DATABASE_PORT = '32768'
+DATABASE_PORT = '32769'
 
 # Flask light-weight web server.
 app = Flask(__name__)
@@ -86,8 +86,12 @@ def post_stats():
 
   return jsonify(new_stats), 201
 
+
 @app.route("{0}/stats".format(api), methods=['GET'])
 def get_stats():
+  """
+  Get all stats from the DB.
+  """
   # Get DB from context:
   stats_collection = g.db.stats
 
