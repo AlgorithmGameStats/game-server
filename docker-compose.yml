@@ -1,0 +1,11 @@
+game-server:
+  build: .
+  ports:
+    - "5000:5000"
+  links:
+    - mongo
+mongo:
+  image: mongo:latest
+  command: --storageEngine wiredTiger
+  volumes:
+  - /data:/data/db

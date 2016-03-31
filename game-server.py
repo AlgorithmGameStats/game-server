@@ -1,22 +1,18 @@
 # All the imports
 import os, json, datetime, pymongo
 from flask import Flask, jsonify, request, abort, current_app, make_response, render_template, g
+from flask.ext.basicauth import BasicAuth
 from flask_jsonschema import JsonSchema, ValidationError
 from werkzeug.exceptions import BadRequest
 from functools import wraps
 
-# Configuration
-HOST = '0.0.0.0'
-PORT = '5000'
-DEBUG = False
-DATABASE_HOST = '192.168.99.100'
-DATABASE_PORT = '32769'
 
 # Flask light-weight web server.
 app = Flask(__name__)
-app.config.from_object(__name__)
+app.config.from_object('settings')
 app.config['JSONSCHEMA_DIR'] = os.path.join(app.root_path, 'schemas')
 jsonschema = JsonSchema(app)
+basic_auth = BasicAuth(app)
 api = '/api/1.0'
 
 
@@ -55,6 +51,7 @@ def connect_db():
     port=int(app.config.get('DATABASE_PORT', '27017'))
   )
   return client.game
+
 
 ##########################
 #### SERVER FUNCTIONS ####
@@ -101,6 +98,7 @@ def get_stats():
       ret_array.append(stat)
   return jsonify({'stats': ret_array})
 
+
 ##########################
 #### HELPER FUNCTIONS ####
 ##########################
@@ -117,5 +115,11 @@ def parse_bool(s):
 def not_found(error):
   return make_response(jsonify({'error': 'Not found'}), 404)
 
+
+##########################
+########## Main ##########
+##########################
 if __name__ == '__main__':
-  app.run(host=app.config['HOST'], port=int(app.config['PORT']), debug=parse_bool(app.config['DEBUG']))
+  app.run(host=app.config.get('HOST', 'localhost'), 
+    port=int(app.config.get('PORT', '5000')), 
+    debug=parse_bool(app.config.get('DEBUG', 'false')))
