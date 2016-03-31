@@ -37,7 +37,9 @@ def on_validation_error(e):
 
 @app.before_request
 def before_request():
+  print "Connecting to DB"
   g.db = connect_db()
+  print "Connected to DB"
 
 @app.teardown_request
 def teardown_request(exception):
