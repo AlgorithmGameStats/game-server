@@ -21,4 +21,4 @@ RUN pip install -r requirements.txt
 
 # Expose port and add command
 EXPOSE 5000
-CMD ["python2", "game-server.py"]
+CMD ["python2", "-u", "game-server.py"]
