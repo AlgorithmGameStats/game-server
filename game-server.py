@@ -44,6 +44,7 @@ def teardown_request(exception):
   db = getattr(g, 'db', None)
   if db is not None:
     db.client.close()
+    print 'destroyed db'
 
 def connect_db():
   client = pymongo.MongoClient(
