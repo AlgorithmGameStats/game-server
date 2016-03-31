@@ -1,5 +1,5 @@
 # All the imports
-import os, json, datetime, pymongo
+import os, json, datetime, pymongo, time, sys, logging
 from flask import Flask, jsonify, request, abort, current_app, make_response, render_template, g
 from flask.ext.basicauth import BasicAuth
 from flask_jsonschema import JsonSchema, ValidationError
@@ -37,17 +37,17 @@ def on_validation_error(e):
 
 @app.before_request
 def before_request():
-  print "Connecting to DB"
+  start = time.clock()
   g.db = connect_db()
-  print "Connected to DB"
+  app.logger.debug('Database connection time: {0}'.format( (time.clock() - start) ))
 
 @app.teardown_request
 def teardown_request(exception):
+  start = time.clock()
   db = getattr(g, 'db', None)
-  print 'Closing DB'
   if db is not None:
     db.client.close()
-    print 'destroyed db'
+  app.logger.debug('Database close time: {0}'.format( (time.clock() - start) ))
 
 def connect_db():
   client = pymongo.MongoClient(
@@ -150,6 +150,16 @@ def not_found(error):
 ########## Main ##########
 ##########################
 if __name__ == '__main__':
+  
+  # Set logging
+  handler = logging.StreamHandler()
+  handler.setLevel(app.config.get('LOG_LEVEL', logging.INFO))
+  formatter = logging.Formatter( "%(asctime)s | %(pathname)s:%(lineno)d | %(funcName)s | %(levelname)s | %(message)s ")
+  handler.setFormatter(formatter)
+  app.logger.addHandler(handler)
+  app.logger.setLevel(app.config.get('LOG_LEVEL', logging.INFO))
+
+  # Start Server
   app.run(host=app.config.get('HOST', 'localhost'), 
     port=int(app.config.get('PORT', '5000')), 
     debug=parse_bool(app.config.get('DEBUG', 'false')))
