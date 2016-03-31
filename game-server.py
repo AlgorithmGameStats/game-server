@@ -57,14 +57,28 @@ def connect_db():
 #### SERVER FUNCTIONS ####
 ##########################
 
-@app.route("/health".format(api), methods=['GET'])
-def version():
+@app.route("/health", methods=['GET'])
+def health():
   """
   Used for Load Balancer Health Checks...
   """
   # Get DB from context, if we can, we assume we are healthy...
   stats_collection = g.db
   return 'OK', 200
+
+
+@app.route("/dump", methods=['GET'])
+@basic_auth.required
+def dump():
+  """
+  Used for Load Balancer Health Checks...
+  """
+  # Get DB from context, if we can, we assume we are healthy...
+  configs = {}
+  for item in app.config:
+    configs[item] = str(app.config[item])
+  return make_response(jsonify({"config": configs}), 200)
+
 
 @app.route("{0}/stats".format(api), methods=['POST'])
 @basic_auth.required
