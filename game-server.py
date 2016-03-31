@@ -57,7 +57,17 @@ def connect_db():
 #### SERVER FUNCTIONS ####
 ##########################
 
+@app.route("/health".format(api), methods=['GET'])
+def version():
+  """
+  Used for Load Balancer Health Checks...
+  """
+  # Get DB from context, if we can, we assume we are healthy...
+  stats_collection = g.db
+  return 'OK', 200
+
 @app.route("{0}/stats".format(api), methods=['POST'])
+@basic_auth.required
 @validate_json
 @jsonschema.validate('stats')
 def post_stats():
@@ -85,6 +95,7 @@ def post_stats():
 
 
 @app.route("{0}/stats".format(api), methods=['GET'])
+@basic_auth.required
 def get_stats():
   """
   Get all stats from the DB.
