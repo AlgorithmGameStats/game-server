@@ -67,7 +67,6 @@ def health():
   Used for Load Balancer Health Checks...
   """
   # Get DB from context, if we can, we assume we are healthy...
-  stats_collection = getattr(g, 'db', None)
   return 'OK', 200
 
 
