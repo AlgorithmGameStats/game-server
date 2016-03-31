@@ -42,6 +42,7 @@ def before_request():
 @app.teardown_request
 def teardown_request(exception):
   db = getattr(g, 'db', None)
+  print 'Closing DB'
   if db is not None:
     db.client.close()
     print 'destroyed db'
@@ -64,7 +65,7 @@ def health():
   Used for Load Balancer Health Checks...
   """
   # Get DB from context, if we can, we assume we are healthy...
-  stats_collection = g.db
+  stats_collection = getattr(g, 'db', None)
   return 'OK', 200
 
 
@@ -116,7 +117,8 @@ def get_stats():
   Get all stats from the DB.
   """
   # Get DB from context:
-  stats_collection = g.db.stats
+  db = getattr(g, 'db', None)
+  stats_collection = db.stats
 
   ret_array = []
   for stat in stats_collection.find().sort([('date', pymongo.DESCENDING), ('_id', pymongo.DESCENDING)]):
