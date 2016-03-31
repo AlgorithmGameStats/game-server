@@ -159,6 +159,6 @@ if __name__ == '__main__':
   app.logger.setLevel(app.config.get('LOG_LEVEL', logging.INFO))
 
   # Start Server
-  app.run(host=app.config.get('HOST', 'localhost'), 
+  app.run(threaded=True, host=app.config.get('HOST', 'localhost'), 
     port=int(app.config.get('PORT', '5000')), 
     debug=parse_bool(app.config.get('DEBUG', 'false')))
