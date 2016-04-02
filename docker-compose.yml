@@ -1,11 +1,13 @@
 game-server:
   build: .
+  restart: always
   ports:
     - "5000:5000"
   links:
     - mongo
 mongo:
   image: mongo:latest
+  restart: always
   command: --storageEngine wiredTiger
   volumes:
   - /data:/data/db
