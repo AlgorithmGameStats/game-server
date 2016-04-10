@@ -107,6 +107,7 @@ def post_stats():
   new_stats['timestamp'] = datetime.datetime.utcnow() # we add the submit date not the user...
 
   result = stats_collection.insert_one(new_stats) # Store in MongoDB
+  stats_id = result.inserted_id # used later for updating the document with the class name and score
   new_stats['_id'] = str(result.inserted_id) # Update local copy with the id.
 
   # Get K_Means classes from DB
@@ -132,8 +133,12 @@ def post_stats():
   # Get the name of the max score
   max_name, max_value = max(profile_scores.iteritems(), key=lambda p: p[1])
 
-  # Return the class_name back.
+  # Return the class_name & class_score back.
   ret_json = {'class_name': max_name, 'class_score': max_value}
+
+  # Before returning, update the DB record with the class_name and class_score
+  stats_collection.find_one_and_update({'_id': stats_id}, {'$set': ret_json})
+
   return jsonify(ret_json), 201
 
 
@@ -178,18 +183,30 @@ def get_clusters():
 
 # Helper: Converts string to Boolean
 def parse_bool(s):
+  """
+  Parse a string to boolean value
+  """
   if s is None:
     return False
   else:
     return str(s).lower() in ('1', 'true', 't', 'yes', 'y')
 
 def get_stats_collection():
+  """
+  Get the Stats Collection Name for the db
+  """
   return app.config.get('STATS_COLLECTION', 'stats')
 
 def get_kmeans_collection():
+  """
+  Get the KMeans collection name from the DB
+  """
   return app.config.get('K_MEANS_COLLECTION', 'kmeans')
 
 def get_player_profiles():
+  """
+  Get Player profile's names from the config file
+  """
   return app.config.get('PLAYER_PROFILES',['killer','collector','achiever'])
 
 def construct_kmeans_obj(collection, class_name):
