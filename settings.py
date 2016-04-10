@@ -10,6 +10,7 @@ BASIC_AUTH_USERNAME = 'game'
 BASIC_AUTH_PASSWORD = 'matrix'
 BASIC_AUTH_FORCE = False
 LOG_LEVEL = logging.DEBUG
+JSONIFY_PRETTYPRINT_REGULAR = False
 STATS_COLLECTION = 'stats'
 K_MEANS_COLLECTION = 'kmeans'
 PLAYER_PROFILES = ['killer','collector','achiever']

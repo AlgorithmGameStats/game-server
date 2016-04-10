@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "New KMeans Cluster",
+  "description": "A New KMeans Clusters Request to store kmeans cluster data on the database",
+  "type": "object",
+  "properties": {
+    "class_name": {
+      "description": "Cluster/Profile Name for this KMeans cluster",
+      "type": "string"
+    },
+    "level": {
+      "description": "Level number associated with the KMeans Cluster data",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": true
+    },
+    "k": {
+      "description": "K value of this KMeans Cluster",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": true
+    },
+    "centroids": {
+      "description": "Array of centroids, should have 'k' arrays with data",
+      "type": "array",
+      "items": {
+          "type": "array",
+          "items": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "minItems": 0
+    },
+    "clusters": {
+      "description": "Array of cluster data, should have 'k' arrays with data",
+      "type": "array",
+      "items": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "minItems": 0
+      },
+      "minItems": 0
+    }
+  },
+  "required": ["class_name", "level", "k", "centroids", "clusters"]
+}

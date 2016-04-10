@@ -120,18 +120,22 @@ def post_stats():
     float(new_stats['enemies_killed'] / new_stats['enemies_total'])
   ]
   for name in profile_names:
+    app.logger.debug('Looking for "{0}"" cluster data.'.format(name))
     k = construct_kmeans_obj(kmeans_collection,name)
     if k is not None:
       # If the k_obj item exists on the db, let's calculate all we need
+      app.logger.debug('Found KMeans cluster for "{0}", K: {1}'.format(name,k.k()))
       player_profiles[name] = k
       profile_scores[name] = get_player_profile_score(k_obj=k, player_item=player_item)
     else: 
       # if k_obj does not exist on the DB, let's just generate a random number for it.
       # We will give it a 'negative' number so it will always be lower than any k_obj found.
+      app.logger.debug('Did not find KMeans cluster for "{0}", using random negative value'.format(name))
       profile_scores[name] = random.uniform(-1000, 0)
 
   # Get the name of the max score
   max_name, max_value = max(profile_scores.iteritems(), key=lambda p: p[1])
+  app.logger.debug('Results for this request --> Class Name: "{0}", Class Score: "{1}"'.format(max_name,max_value))
 
   # Return the class_name & class_score back.
   ret_json = {'class_name': max_name, 'class_score': max_value}
@@ -160,6 +164,34 @@ def get_stats():
   return jsonify({'stats': ret_array})
 
 
+@app.route("{0}/clusters".format(api), methods=['POST'])
+@basic_auth.required
+@validate_json
+@jsonschema.validate('clusters')
+def post_clusters():
+  """
+  Get all of the KMeans Clusters Data from the DB
+  """
+  # Get DB from context:
+  db = getattr(g, 'db', None)
+  colection = get_kmeans_collection()
+  kmeans_collection = db[colection]
+
+  # Get the Json order from the request
+  new_cluster = request.get_json()
+  new_cluster['timestamp'] = datetime.datetime.utcnow() # we add the submit date not the user...
+
+
+  result = kmeans_collection.find_one_and_update(
+    {'class_name': new_cluster['class_name'], 'level': new_cluster['level']}, 
+    {'$set': new_cluster}, 
+    upsert=True
+  )
+  new_cluster['_id'] = str(result['_id']) # Update local copy with the id.
+  
+  return jsonify({'cluster': new_cluster}), 200
+
+
 @app.route("{0}/clusters".format(api), methods=['GET'])
 @basic_auth.required
 def get_clusters():
@@ -175,7 +207,7 @@ def get_clusters():
   for cluster in kmeans_collection.find().sort([('class_name', pymongo.DESCENDING), ('_id', pymongo.DESCENDING)]):
       cluster['_id'] = str(cluster['_id'])
       ret_array.append(cluster)
-  return jsonify({'clusters': ret_array})
+  return jsonify({'clusters': ret_array}),200
 
 ##########################
 #### HELPER FUNCTIONS ####
