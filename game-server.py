@@ -1,11 +1,11 @@
 # All the imports
-import os, json, datetime, pymongo, time, sys, logging
+import os, json, datetime, pymongo, time, sys, logging, random
 from flask import Flask, jsonify, request, abort, current_app, make_response, render_template, g
 from flask.ext.basicauth import BasicAuth
 from flask_jsonschema import JsonSchema, ValidationError
 from werkzeug.exceptions import BadRequest
 from functools import wraps
-
+from kmeans.kmeans import KMeans
 
 # Flask light-weight web server.
 app = Flask(__name__)
@@ -96,7 +96,11 @@ def post_stats():
   """
   
   # Get DB from context:
-  stats_collection = g.db.stats
+  db = getattr(g, 'db', None)
+  colection = get_stats_collection()
+  stats_collection = db[colection]
+  colection = get_kmeans_collection()
+  kmeans_collection = db[colection]
 
   # Get the Json order from the request
   new_stats = request.get_json()
@@ -105,10 +109,32 @@ def post_stats():
   result = stats_collection.insert_one(new_stats) # Store in MongoDB
   new_stats['_id'] = str(result.inserted_id) # Update local copy with the id.
 
-  # Calculate new k-means
-  # Maybe create a response json with new difficulty?
+  # Get K_Means classes from DB
+  profile_names = get_player_profiles()
+  player_profiles = {}
+  profile_scores = dict()
+  player_item = [
+    float(new_stats['time']), 
+    float(new_stats['collected_coins']/new_stats['max_coins']), 
+    int(new_stats['enemies'])
+  ]
+  for name in profile_names:
+    k = construct_kmeans_obj(kmeans_collection,name)
+    if k is not None:
+      # If the k_obj item exists on the db, let's calculate all we need
+      player_profiles[name] = k
+      profile_scores[name] = get_player_profile_score(k_obj=k, player_item=player_item)
+    else: 
+      # if k_obj does not exist on the DB, let's just generate a random number for it.
+      # We will give it a 'negative' number so it will always be lower than any k_obj found.
+      profile_scores[name] = random.uniform(-1000, 0)
 
-  return jsonify(new_stats), 201
+  # Get the name of the max score
+  max_name, max_value = max(profile_scores.iteritems(), key=lambda p: p[1])
+
+  # Return the class_name back.
+  ret_json = {'class_name': max_name, 'class_score': max_value}
+  return jsonify(ret_json), 201
 
 
 @app.route("{0}/stats".format(api), methods=['GET'])
@@ -119,7 +145,8 @@ def get_stats():
   """
   # Get DB from context:
   db = getattr(g, 'db', None)
-  stats_collection = db.stats
+  colection = get_stats_collection()
+  stats_collection = db[colection]
 
   ret_array = []
   for stat in stats_collection.find().sort([('date', pymongo.DESCENDING), ('_id', pymongo.DESCENDING)]):
@@ -138,6 +165,52 @@ def parse_bool(s):
     return False
   else:
     return str(s).lower() in ('1', 'true', 't', 'yes', 'y')
+
+def get_stats_collection():
+  return app.config.get('STATS_COLLECTION', 'stats')
+
+def get_kmeans_collection():
+  return app.config.get('K_MEANS_COLLECTION', 'kmeans')
+
+def get_player_profiles():
+  return app.config.get('PLAYER_PROFILES',['killer','collector','achiever'])
+
+def construct_kmeans_obj(collection, class_name):
+  """
+  Grabs the kmeans data from the db
+  Re-creates the KMeans object
+  Data: 
+  {
+    'class_name': 'killer/achiever/collector',
+    'k': 2,
+    'centroids': [ [] [] ],
+    'clusters': [ [] [] ],
+  }
+  """
+  k = None
+  class_name = class_name.lower()
+  k_data = collection.find_one({'class_name': class_name})
+  if k_data is not None:
+    k = KMeans(k=k_data['k'], class_name=class_name)
+    k.centroids = k_data['centroids']
+    k.clusters = k_data['clusters']
+  return k
+
+def get_player_profile_score(k_obj, player_item):
+  """
+  Calculate the dot_product of the player given a specific KMeans object.
+  If the KMeans object is of K>1 it will sum all dot_product values together.
+  player_item: [time, coins_%, murders]
+  """
+  return sum(dot_product(k_obj, player_item))
+
+def dot_product(k_obj, player_item):
+  """
+  calculate the dot product of a player item to all centroids in a kmeans object
+  player_item: [time, coins_%, murders]
+  """
+  return [ sum([player_item[i] * k_obj.centroids[j][i] for i in range(len(player_item))]) for j in range(len(k_obj.centroids))]
+
 
 # Helper: respond method for 404 errors
 @app.errorhandler(404)
