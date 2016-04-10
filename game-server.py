@@ -119,12 +119,14 @@ def post_stats():
     float(new_stats['coins_collected']/ new_stats['coins_total']), 
     float(new_stats['enemies_killed'] / new_stats['enemies_total'])
   ]
+
+  level = new_stats['level']
   for name in profile_names:
-    app.logger.debug('Looking for "{0}"" cluster data.'.format(name))
-    k = construct_kmeans_obj(kmeans_collection,name)
+    app.logger.debug('Looking up cluster data for: Class "{0}" and Level "{1}"'.format(name, level))
+    k = construct_kmeans_obj(kmeans_collection, name, level)
     if k is not None:
       # If the k_obj item exists on the db, let's calculate all we need
-      app.logger.debug('Found KMeans cluster for "{0}", K: {1}'.format(name,k.k()))
+      app.logger.debug('Found KMeans cluster for "{0}" and level {1} --> K: {2}'.format(name, level, k.k()))
       player_profiles[name] = k
       profile_scores[name] = get_player_profile_score(k_obj=k, player_item=player_item)
     else: 
@@ -241,7 +243,7 @@ def get_player_profiles():
   """
   return app.config.get('PLAYER_PROFILES',['killer','collector','achiever'])
 
-def construct_kmeans_obj(collection, class_name):
+def construct_kmeans_obj(collection, class_name, level):
   """
   Grabs the kmeans data from the db
   Re-creates the KMeans object
@@ -255,7 +257,7 @@ def construct_kmeans_obj(collection, class_name):
   """
   k = None
   class_name = class_name.lower()
-  k_data = collection.find_one({'class_name': class_name})
+  k_data = collection.find_one({'class_name': class_name, 'level': level})
   if k_data is not None:
     k = KMeans(k=k_data['k'], class_name=class_name)
     k.centroids = k_data['centroids']
