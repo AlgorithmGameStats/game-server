@@ -114,9 +114,9 @@ def post_stats():
   player_profiles = {}
   profile_scores = dict()
   player_item = [
-    float(new_stats['time']), 
-    float(new_stats['collected_coins']/new_stats['max_coins']), 
-    int(new_stats['enemies'])
+    float(new_stats['time_used'] / new_stats['time_total']), 
+    float(new_stats['coins_collected']/ new_stats['coins_total']), 
+    float(new_stats['enemies_killed'] / new_stats['enemies_total'])
   ]
   for name in profile_names:
     k = construct_kmeans_obj(kmeans_collection,name)
@@ -154,6 +154,23 @@ def get_stats():
       ret_array.append(stat)
   return jsonify({'stats': ret_array})
 
+
+@app.route("{0}/clusters".format(api), methods=['GET'])
+@basic_auth.required
+def get_clusters():
+  """
+  Get all of the KMeans Clusters Data from the DB
+  """
+  # Get DB from context:
+  db = getattr(g, 'db', None)
+  colection = get_kmeans_collection()
+  kmeans_collection = db[colection]
+
+  ret_array = []
+  for cluster in kmeans_collection.find().sort([('class_name', pymongo.DESCENDING), ('_id', pymongo.DESCENDING)]):
+      cluster['_id'] = str(cluster['_id'])
+      ret_array.append(cluster)
+  return jsonify({'clusters': ret_array})
 
 ##########################
 #### HELPER FUNCTIONS ####
@@ -204,12 +221,13 @@ def get_player_profile_score(k_obj, player_item):
   """
   return sum(dot_product(k_obj, player_item))
 
+
 def dot_product(k_obj, player_item):
   """
   calculate the dot product of a player item to all centroids in a kmeans object
   player_item: [time, coins_%, murders]
   """
-  return [ sum([player_item[i] * k_obj.centroids[j][i] for i in range(len(player_item))]) for j in range(len(k_obj.centroids))]
+  return k_obj.dot_product(player_item)
 
 
 # Helper: respond method for 404 errors

@@ -10,25 +10,37 @@
       "minimum": 0,
       "exclusiveMinimum": true
     },
-    "time": {
+    "time_used": {
       "description": "Time taken (in seconds) to clear the level",
       "type": "number",
       "minimum": 0.0,
       "exclusiveMinimum": true
     },
-    "enemies": {
+    "time_total": {
+      "description": "Total time given (in seconds) to clear the level",
+      "type": "number",
+      "minimum": 0.0,
+      "exclusiveMinimum": true
+    },
+    "enemies_killed": {
       "description": "Number of enemies the player destroyed this level",
       "type": "integer",
       "minimum": 0,
       "exclusiveMinimum": false
     },
-    "collected_coins": {
+    "enemies_total": {
+      "description": "Total number of enemies the player could have destroyed this level",
+      "type": "integer",
+      "minimum": 0,
+      "exclusiveMinimum": false
+    },
+    "coins_collected": {
       "description": "Number of coins the player collected in the level",
       "type": "integer",
       "minimum": 0,
       "exclusiveMinimum": false
     },
-    "max_coins": {
+    "coins_total": {
       "description": "Maximum number of coins a player could collect this level",
       "type": "integer",
       "minimum": 0,
@@ -43,5 +55,5 @@
       "type": "string"
     }
   },
-  "required": ["level", "time", "enemies", "collected_coins", "max_coins"]
+  "required": ["level", "time_used", "time_total", "enemies_killed", "enemies_total", "coins_collected", "coins_total"]
 }
