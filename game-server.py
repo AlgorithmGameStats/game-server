@@ -183,6 +183,14 @@ def post_clusters():
   new_cluster = request.get_json()
   new_cluster['timestamp'] = datetime.datetime.utcnow() # we add the submit date not the user...
 
+  # At least validate that each cluster/centroid has 'k' number of arrays
+  k = new_cluster['k']
+  centroids = new_cluster['centroids']
+  cluster_data = new_cluster['clusters']
+  if  (len(centroids) is not k):
+    return make_response(jsonify({'error': 'centroids data inconsistent'}), 404)
+  elif (len(cluster_data) is not k):
+    return make_response(jsonify({'error': 'cluster data inconsistent'}), 404)
 
   result = kmeans_collection.find_one_and_update(
     {'class_name': new_cluster['class_name'], 'level': new_cluster['level']}, 
