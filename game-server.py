@@ -115,9 +115,9 @@ def post_stats():
   player_profiles = {}
   profile_scores = dict()
   player_item = [
-    float(new_stats['time_used'] / new_stats['time_total']), 
-    float(new_stats['coins_collected']/ new_stats['coins_total']), 
-    float(new_stats['enemies_killed'] / new_stats['enemies_total'])
+    float(new_stats['time_used']) / float(new_stats['time_total']), 
+    float(new_stats['coins_collected']) / float(new_stats['coins_total']), 
+    float(new_stats['enemies_killed']) / float(new_stats['enemies_total'])
   ]
 
   level = new_stats['level']
