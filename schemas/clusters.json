@@ -20,6 +20,23 @@
       "minimum": 0,
       "exclusiveMinimum": true
     },
+    "labels": {
+      "description": "Array of labels...",
+      "type": "array",
+      "items": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    },
     "centroids": {
       "description": "Array of centroids, should have 'k' arrays with data",
       "type": "array",
@@ -67,5 +84,5 @@
       "minItems": 0
     }
   },
-  "required": ["class_name", "level", "k", "centroids", "clusters"]
+  "required": ["class_name", "level", "k", "labels", "centroids", "clusters"]
 }

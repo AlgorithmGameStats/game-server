@@ -1,5 +1,6 @@
 # All the imports
 import os, json, datetime, pymongo, time, sys, logging, random
+from math import sqrt
 from flask import Flask, jsonify, request, abort, current_app, make_response, render_template, g
 from flask.ext.basicauth import BasicAuth
 from flask_jsonschema import JsonSchema, ValidationError
@@ -121,22 +122,23 @@ def post_stats():
   ]
 
   level = new_stats['level']
-  for name in profile_names:
-    app.logger.debug('Looking up cluster data for: Class "{0}" and Level "{1}"'.format(name, level))
-    k = construct_kmeans_obj(kmeans_collection, name, level)
-    if k is not None:
-      # If the k_obj item exists on the db, let's calculate all we need
-      app.logger.debug('Found KMeans cluster for "{0}" and level {1} --> K: {2}'.format(name, level, k.k()))
-      player_profiles[name] = k
-      profile_scores[name] = get_player_profile_score(k_obj=k, player_item=player_item)
-    else: 
-      # if k_obj does not exist on the DB, let's just generate a random number for it.
-      # We will give it a 'negative' number so it will always be lower than any k_obj found.
+  k = construct_kmeans_obj(kmeans_collection, level)
+  if k is not None:
+    app.logger.debug('Found KMeans cluster for level {0} --> K: {1}'.format(level, k.k()))
+    for i in range(k.k()):
+      temp = get_player_profile_score(k_obj=k, player_item=player_item, index=i)
+      profile_scores[k.labels[i]] = temp
+      app.logger.debug('Got score of {0} for class {1}.'.format(temp,k.labels[i]))
+  else:
+    # if k_obj does not exist on the DB, let's just generate a random number for it.
+    # We will give it a 'negative' number so it will always be lower than any k_obj found.
+    for name in get_player_profiles():
       app.logger.debug('Did not find KMeans cluster for "{0}", using random negative value'.format(name))
       profile_scores[name] = random.uniform(-1000, 0)
+      
 
-  # Get the name of the max score
-  max_name, max_value = max(profile_scores.iteritems(), key=lambda p: p[1])
+  # Get the name of the minimum score, closest centroid
+  max_name, max_value = min(profile_scores.iteritems(), key=lambda p: p[1])
   app.logger.debug('Results for this request --> Class Name: "{0}", Class Score: "{1}"'.format(max_name,max_value))
 
   # Return the class_name & class_score back.
@@ -187,13 +189,16 @@ def post_clusters():
   k = new_cluster['k']
   centroids = new_cluster['centroids']
   cluster_data = new_cluster['clusters']
+  labels = new_cluster['labels']
   if  (len(centroids) is not k):
     return make_response(jsonify({'error': 'centroids data inconsistent'}), 404)
   elif (len(cluster_data) is not k):
     return make_response(jsonify({'error': 'cluster data inconsistent'}), 404)
+  elif (len(labels) is not k):
+    return make_response(jsonify({'error': 'labels inconsistent'}), 404)
 
   result = kmeans_collection.find_one_and_update(
-    {'class_name': new_cluster['class_name'], 'level': new_cluster['level']}, 
+    {'level': new_cluster['level']}, 
     {'$set': new_cluster}, 
     upsert=True
   )
@@ -251,42 +256,38 @@ def get_player_profiles():
   """
   return app.config.get('PLAYER_PROFILES',['killer','collector','achiever'])
 
-def construct_kmeans_obj(collection, class_name, level):
+def construct_kmeans_obj(collection, level):
   """
   Grabs the kmeans data from the db
   Re-creates the KMeans object
   Data: 
   {
-    'class_name': 'killer/achiever/collector',
-    'k': 2,
-    'centroids': [ [] [] ],
-    'clusters': [ [] [] ],
+    'class_name': 'doesn't matter,
+    'k': 3,
+    'labels': ['achiever', 'collector', 'killer']
+    'centroids': [ [] [] [] ],
+    'clusters': [ [] [] [] ],
   }
   """
   k = None
-  class_name = class_name.lower()
-  k_data = collection.find_one({'class_name': class_name, 'level': level})
+  k_data = collection.find_one({'level': level})
   if k_data is not None:
-    k = KMeans(k=k_data['k'], class_name=class_name)
+    k = KMeans(k=k_data['k'], class_name=k_data['class_name'])
     k.centroids = k_data['centroids']
     k.clusters = k_data['clusters']
+    k.labels = k_data['labels']
   return k
 
-def get_player_profile_score(k_obj, player_item):
+def get_player_profile_score(k_obj, player_item, index):
   """
-  Calculate the dot_product of the player given a specific KMeans object.
-  If the KMeans object is of K>1 it will sum all dot_product values together.
+  Calculate the dot product of the player given a specific KMeans object.
+  If the KMeans object is of K>1 it will sum all dot product values together.
   player_item: [time, coins_%, murders]
   """
-  return sum(dot_product(k_obj, player_item))
-
-
-def dot_product(k_obj, player_item):
-  """
-  calculate the dot product of a player item to all centroids in a kmeans object
-  player_item: [time, coins_%, murders]
-  """
-  return k_obj.dot_product(player_item)
+  app.logger.debug('Calculating distance of: {0} to {1}'.format(player_item,k_obj.centroids[index]))
+  return sqrt(sum(
+    ((player_item[i] - k_obj.centroids[index][i])**2) for i in range(len(player_item))
+  ))
 
 
 # Helper: respond method for 404 errors
